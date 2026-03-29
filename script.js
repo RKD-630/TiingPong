@@ -88,10 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add default clips
     addClip('media', 0, 8, { bgType: 'color', color: '#1a1a2e' });
     addClip('text', 1, 6, { 
-        text: "T2V Studio NLE\nCinematic Text", 
+        text: "Cinematic Text", 
         font: "'Inter', sans-serif", 
         size: 36, color: "#ffffff", bgColor: "transparent", 
-        effect: "none", bold: true, italic: false, x: 50, y: 50 
+        effect: "none", bold: true, italic: false, x: 30, y: 30 
     });
 
 

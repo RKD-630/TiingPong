@@ -38,8 +38,8 @@ body {
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    padding: 1rem;
+    height: 97vh;
+    padding: 0.4rem;
     gap: 1.5rem;
 }
 
@@ -53,7 +53,7 @@ body {
     box-shadow: var(--glass-shadow);
 }
 
-.w-100 { width: 100%; }
+.w-70 { width: 100%; }
 .flex-row { display: flex; gap: 0.5rem; align-items: center; }
 .flex-spaced { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; }
 
@@ -62,16 +62,16 @@ h3 { font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; color:
 /* Buttons & Inputs */
 .btn {
     border: none;
-    padding: 0.6rem 1rem;
+    padding: 0.2rem 1rem;
     border-radius: 8px;
-    font-weight: 600;
+    font-weight: 300;
     cursor: pointer;
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
+    gap: 1.5rem;
+    font-size: 0.95rem;
 }
 .btn-primary { background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--glass-border); }
 .btn-primary:hover { background: rgba(255,255,255,0.2); }
@@ -126,8 +126,8 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
 /* TOP WORKSPACE: Sidebar + Preview */
 .top-workspace {
     display: flex;
-    gap: 1.5rem;
-    height: calc(100vh - 350px);
+    gap: 1.0rem;
+    height: calc(450vh - 90px);
     overflow: hidden;
 }
 
@@ -173,10 +173,10 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
 }
 
 .video-frame {
-    width: 270px; /* Base 9:16 approx for responsive */
-    height: 480px;
+    width: 100px; /* Base 9:16 approx for responsive */
+    height: 175px;
     background-color: #000;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.6);
     position: relative;
     overflow: hidden;
 }
@@ -227,13 +227,13 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
 }
 
 .track-labels {
-    width: 130px; border-right: 1px solid var(--glass-border);
+    width: 150px; border-right: 1px solid var(--glass-border);
     background: rgba(0,0,0,0.5); padding-top: 30px; display: flex; flex-direction: column;
-    z-index: 50;
+    z-index: 20;
 }
 .t-label {
-    height: 60px; display: flex; align-items: center; padding-left: 1rem;
-    font-size: 0.75rem; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.05);
+    height: 20px; display: flex; align-items: center; padding-left: 5.1rem;
+    font-size: 0.95rem; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
 .tracks-viewport {
@@ -241,7 +241,7 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
 }
 
 .ruler-container {
-    height: 30px; border-bottom: 1px solid var(--glass-border); background: var(--bg-secondary);
+    height: 30px; border-bottom: 0.2px solid var(--glass-border); background: var(--bg-secondary);
     position: relative; width: 100%; min-width: 100%; /* dynamically set */
 }
 /* Ruler styling is drawn via JS background or canvas, stick to CSS for now */
@@ -251,17 +251,17 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
 }
 
 .playhead {
-    position: absolute; top: 0; bottom: -1000px; width: 2px; background: #ef4444; z-index: 100;
+    position: absolute; top: 0; bottom: -900px; width: 2px; background: #ef4444; z-index: 100;
 }
 .playhead::before {
-    content: ''; position: absolute; top: 0; left: -5px; width: 12px; height: 12px;
+    content: ''; position: absolute; top: 0; left: -9px; width: 12px; height: 12px;
     background: #ef4444; border-radius: 5px 5px 0 0; cursor: ew-resize;
 }
 
-.tracks-container { position: relative; width: 100%; min-width: 100%; }
+.tracks-container { position: relative; width: 190%; min-width: 100%; }
 
 .tl-track {
-    height: 60px; border-bottom: 1px solid rgba(255,255,255,0.05); position: relative; width: 100%;
+    height: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); position: relative; width: 100%;
 }
 .track-grid {
     position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;
@@ -273,11 +273,11 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
 
 /* Timeline Clip Node */
 .clip-node {
-    position: absolute; height: 48px; top: 6px; border-radius: 6px;
+    position: absolute; height: 15px; top: 6px; border-radius: 6px;
     display: flex; align-items: center; padding: 0 0.5rem;
-    font-size: 0.75rem; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    font-size: 0.75rem; font-weight: 50; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
     cursor: grab; user-select: none; overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid transparent;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 9px solid transparent;
 }
 .clip-node.selected { border: 2px solid #fff; z-index: 5; box-shadow: 0 0 10px rgba(255,255,255,0.4);}
 .clip-node:active { cursor: grabbing; }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T2V Cinematic Studio Pro</title>
+    <title>T2V Cinematic Studio</title>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@300;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <!-- Font Awesome for Icons -->
@@ -23,28 +23,27 @@
             <!-- Left Sidebar: Inspector / Properties -->
             <aside class="sidebar glass-panel">
                 <header class="sidebar-header">
-                    <h2><i class="fa-solid fa-film"></i> T2V Studio PRO</h2>
+                    <h2><i class="fa-solid fa-film"></i> ~ T2V Studio ~</h2>
                     <p>Timeline-based HD Video Creator</p>
                 </header>
                 
                 <!-- NEW TOOLS SECTIONS -->
-                <div class="quick-tools" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 0.8rem;">
+                <div class="quick-tools" style="padding: 1rem 0.2rem; border-bottom: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 0.1rem;">
                     <div class="flex-row">
                         <select id="video-ratio-btn" class="input-field styled-select" style="flex:1; padding:0.4rem; font-size:0.8rem;">
-                            <option value="9:16">Ratio 9:16</option>
-                            <option value="16:9">Ratio 16:9</option>
-                            <option value="3:4">Ratio 3:4</option>
+                            <option value="9:16">9:16</option>
+                            <option value="16:9">16:9</option>
+                            <option value="3:4">3:4</option>
                         </select>
                         <button class="btn btn-secondary" id="crop-media-btn" style="flex:1; padding:0.4rem; font-size:0.8rem;" title="Crop/Fit selected image or video">
-                            <i class="fa-solid fa-crop"></i> Crop
-                        </button>
+                            <i class="fa-solid fa-crop"></i></button>
                     </div>
                     <div class="flex-row">
                         <button class="btn btn-secondary" id="apply-transition-btn" style="flex:1; padding:0.4rem; font-size:0.8rem;" title="Fade & Slide transition between scenes">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Fade+Slide
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 
                         </button>
                         <button class="btn btn-secondary" id="apply-text-anim-btn" style="flex:1; padding:0.4rem; font-size:0.8rem;" title="Auto animate texts">
-                            <i class="fa-solid fa-font"></i> Text Anims
+                            <i class="fa-solid fa-font"></i>nim.
                         </button>
                     </div>
                 </div>
@@ -54,22 +53,22 @@
                     <!-- Empty State -->
                     <div id="prop-empty" class="prop-section active">
                         <div style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
-                            <i class="fa-solid fa-arrow-pointer" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <i class="fa-solid fa-arrow-pointer" style="font-size: 1rem; margin-bottom: 1rem; opacity: 0.5;"></i>
                             <p>Select a clip on the timeline below to edit its properties.</p>
                         </div>
                     </div>
 
                     <!-- MEDIA / BACKGROUND SECION (Pages) -->
                     <div id="prop-media" class="prop-section">
-                        <h3><i class="fa-solid fa-image"></i> Scene Background</h3>
+                        <h3><i class="fa-solid fa-image"></i> BG</h3>
                         
                         <div class="control-group">
-                            <label>Background Type</label>
+                            <label>BG Type</label>
                             <select id="bg-type" class="input-field styled-select">
-                                <option value="color">Solid Color</option>
+                                <option value="color">Solid</option>
                                 <option value="gradient">Gradient</option>
-                                <option value="image">Image Upload</option>
-                                <option value="video">Video Upload</option>
+                                <option value="image">Image</option>
+                                <option value="video">Video</option>
                             </select>
                         </div>
 
@@ -79,7 +78,7 @@
                         </div>
 
                         <div class="control-group" id="bg-grad-group" style="display:none;">
-                            <label>Gradient Colors</label>
+                            <label>Gradient</label>
                             <div class="flex-row">
                                 <input type="color" id="bg-grad-1" value="#ff0080">
                                 <input type="color" id="bg-grad-2" value="#7928ca">
@@ -89,7 +88,7 @@
                         </div>
 
                         <div class="control-group" id="bg-upload-group" style="display:none;">
-                            <label class="btn btn-secondary file-upload-btn w-100">
+                            <label class="btn btn-secondary file-upload-btn w-90">
                                 <i class="fa-solid fa-upload"></i> Upload Media File
                                 <input type="file" id="bg-file-upload" accept="image/*,video/*" hidden>
                             </label>
@@ -99,10 +98,10 @@
 
                     <!-- TEXT SECTION -->
                     <div id="prop-text" class="prop-section">
-                        <h3><i class="fa-solid fa-keyboard"></i> Text Configuration</h3>
+                        <h3><i class="fa-solid fa-keyboard"></i> Text </h3>
                         
                         <div class="control-group">
-                            <textarea id="text-content" rows="3" placeholder="Enter text here..."></textarea>
+                            <textarea id="text-content" rows="1" placeholder="Enter text here..."></textarea>
                             
                             <div class="icon-picker" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
                                 <button class="btn btn-secondary icon-insert-btn" data-icon="fa-star"><i class="fa-solid fa-star"></i></button>
@@ -138,7 +137,7 @@
                         </div>
 
                         <div class="control-group">
-                            <label>Text Effect / Animation</label>
+                            <label>Text Animation</label>
                             <select id="text-effect" class="input-field styled-select">
                                 <option value="none">None</option>
                                 <option value="glow">Neon Glow</option>
@@ -153,10 +152,10 @@
 
                     <!-- AUDIO SECTION -->
                     <div id="prop-audio" class="prop-section">
-                        <h3><i class="fa-solid fa-music"></i> Audio Track</h3>
+                        <h3><i class="fa-solid fa-music"></i> Audio </h3>
                         <div class="control-group">
                             <label class="btn btn-secondary file-upload-btn w-100">
-                                <i class="fa-solid fa-file-audio"></i> Upload Audio (.mp3, .wav)
+                                <i class="fa-solid fa-file-audio"></i>  Audio (.mp3, .wav)
                                 <input type="file" id="audio-file-upload" accept="audio/*" hidden>
                             </label>
                             <p id="audio-file-name" style="font-size: 0.8rem; margin-top:0.5rem; color: var(--accent);"></p>
@@ -171,14 +170,14 @@
 
                 <!-- Delete Clip Button (shows when clip selected) -->
                 <div style="padding: 0 1.5rem 1rem;">
-                    <button class="btn btn-secondary w-100" id="delete-clip-btn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); display: none;">
-                        <i class="fa-solid fa-trash"></i> Delete Selected Clip
+                    <button class="btn btn-secondary w-80" id="delete-clip-btn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); display: none;">
+                        <i class="fa-solid fa-trash"></i> Delete 
                     </button>
                 </div>
 
                 <div class="sidebar-footer">
-                     <button class="btn btn-accent pulse w-100" id="generate-video-btn">
-                        <i class="fa-solid fa-video"></i> Render HD Video
+                     <button class="btn btn-accent pulse w-50" id="generate-video-btn">
+                        <i class="fa-solid fa-video"></i> Render
                     </button>
                 </div>
             </aside>
@@ -186,8 +185,8 @@
             <!-- Center/Right: Video Preview Panel -->
             <main class="preview-area glass-panel">
                 <div class="preview-header">
-                    <div class="status-indicator"><span class="dot active"></span> Final Preview (9:16 vertical)</div>
-                    <div style="color: var(--text-muted); font-size: 0.85rem;" id="player-time-display">00:00.0</div>
+                    <div class="status-indicator"><span class="dot active"></span> Preview (8:16 vertical)</div>
+                    <div style="color: var(--text-muted); font-size: 1.85rem;" id="player-time-display">00:00.0</div>
                 </div>
                 
                 <div class="video-wrapper">
@@ -209,9 +208,9 @@
                     <span class="tl-time-counter" id="tl-time-counter">00:00 / 00:15</span>
                 </div>
                 <div class="tl-tools center">
-                    <button class="btn tl-add-btn" id="add-media-clip-btn" title="Add Image/Video/Background Page to the beginning or end"><i class="fa-solid fa-image"></i> Add Scene</button>
-                    <button class="btn tl-add-btn" id="add-text-clip-btn" title="Add Text Layer"><i class="fa-solid fa-font"></i> Add Text</button>
-                    <button class="btn tl-add-btn" id="add-audio-clip-btn" title="Add Background Audio"><i class="fa-solid fa-music"></i> Add Audio</button>
+                    <button class="btn tl-add-btn" id="add-media-clip-btn" title="Add Image/Video/Background Page to the beginning or end"><i class="fa-solid fa-image"></i> </button>
+                    <button class="btn tl-add-btn" id="add-text-clip-btn" title="Add Text Layer"><i class="fa-solid fa-font"></i> </button>
+                    <button class="btn tl-add-btn" id="add-audio-clip-btn" title="Add Background Audio"><i class="fa-solid fa-music"></i></button>
                 </div>
                 <div class="tl-tools right">
                     <i class="fa-solid fa-magnifying-glass-minus" style="font-size:0.8rem;"></i>
@@ -220,12 +219,7 @@
                 </div>
             </div>
 
-            <div class="timeline-body">
-                <div class="track-labels">
-                    <div class="t-label">Scenes / Pages</div>
-                    <div class="t-label">Text Effects</div>
-                    <div class="t-label">Audio Track</div>
-                </div>
+          
                 
                 <div class="tracks-viewport" id="tracks-viewport">
                     <div class="ruler-container" id="tl-ruler">
@@ -256,12 +250,12 @@
     <div id="generation-overlay" class="overlay hidden">
         <div class="loader-content">
             <div class="spinner"></div>
-            <h2 id="generation-text">Rendering HD Video NLE...</h2>
-            <p>Compiling timeline sequences frame by frame</p>
+            <h2 id="generation-text">Rendering Video NLE...</h2>
+            <p>Compiling .....</p>
             <div class="progress-bar">
                 <div class="progress-fill" id="progress-fill"></div>
             </div>
-            <button class="btn btn-primary hidden" id="download-video-btn"><i class="fa-solid fa-download"></i> Download Video</button>
+            <button class="btn btn-primary hidden" id="download-video-btn"><i class="fa-solid fa-download"></i> Download</button>
             <button class="btn btn-secondary hidden" id="close-overlay-btn">Close</button>
         </div>
     </div>
