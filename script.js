@@ -1,40 +1,41 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- Application State NLE ---
+    // --- Application State ---
     const APP = {
         ratio: '9:16',
         zoom: 50, // Pixels per second
         duration: 20, // Total timeline duration in seconds
-        time: 0, // Current playhead time 0 -> duration
+        time: 0, 
         playing: false,
         selectedClipId: null,
         tracks: {
-            media: [], // Backgrounds/Scenes
-            text: [],  // Text Overlays
-            audio: []  // Audio layer
+            media: [], 
+            text: [],  
+            audio: []  
         },
-        clipboardIcons: [], // To track loaded fonts etc
     };
 
     // --- DOM Elements ---
-    // Top workspace NLE
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const newProjectBtn = document.getElementById('new-project-btn');
+    
     const propEmpty = document.getElementById('prop-empty');
     const propMedia = document.getElementById('prop-media');
     const propText = document.getElementById('prop-text');
     const propAudio = document.getElementById('prop-audio');
-    const btnDelete = document.getElementById('delete-clip-btn');
 
     const frameBg = document.getElementById('frame-bg');
     const frameObjects = document.getElementById('frame-objects');
     const videoFrame = document.getElementById('dynamic-video-frame');
     const playerTimeDisplay = document.getElementById('player-time-display');
 
-    // Timeline workspace NLE
     const tlPlayBtn = document.getElementById('tl-play');
     const tlTimeCounter = document.getElementById('tl-time-counter');
     const tlZoom = document.getElementById('tl-zoom');
     
     const playhead = document.getElementById('playhead');
+    const playheadHandle = document.getElementById('playhead-handle');
     const trackContents = {
         media: document.getElementById('content-media'),
         text: document.getElementById('content-text'),
@@ -42,855 +43,200 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const tracksViewport = document.getElementById('tracks-viewport');
     
-    // Media Properties NLE
     const bgType = document.getElementById('bg-type');
     const bgColorGroup = document.getElementById('bg-color-group');
     const bgGradGroup = document.getElementById('bg-grad-group');
     const bgUploadGroup = document.getElementById('bg-upload-group');
     const bgColorVal = document.getElementById('bg-color-val');
+    const bgColorHex = document.getElementById('bg-color-hex');
     const bgGrad1 = document.getElementById('bg-grad-1');
     const bgGrad2 = document.getElementById('bg-grad-2');
     const bgGradAngle = document.getElementById('bg-grad-angle');
     const bgFileUpload = document.getElementById('bg-file-upload');
     const bgFileName = document.getElementById('bg-file-name');
 
-    // Text Properties NLE
     const textContent = document.getElementById('text-content');
     const textFont = document.getElementById('text-font');
     const textSize = document.getElementById('text-size');
     const textColor = document.getElementById('text-color');
     const textBgColor = document.getElementById('text-bg-color');
     const textEffect = document.getElementById('text-effect');
+    const effectSpeed = document.getElementById('effect-speed');
     const btnBold = document.getElementById('btn-bold');
     const btnItalic = document.getElementById('btn-italic');
     const iconButtons = document.querySelectorAll('.icon-insert-btn');
 
-    // Audio Properties NLE
     const audioFileUpload = document.getElementById('audio-file-upload');
     const audioFileName = document.getElementById('audio-file-name');
     const audioVol = document.getElementById('audio-vol');
 
-    // New Toolbar Tools
     const videoRatioBtn = document.getElementById('video-ratio-btn');
-    const cropMediaBtn = document.getElementById('crop-media-btn');
-    const applyTransitionBtn = document.getElementById('apply-transition-btn');
-    const applyTextAnimBtn = document.getElementById('apply-text-anim-btn');
-
-    // Rendering
-    const generateBtnTop = document.getElementById('generate-video-btn');
-    const generateBtnBot = document.querySelector('.sidebar-footer #generate-video-btn');
+    const finishBtn = document.getElementById('finish-and-save-btn');
+    const exportFormat = document.getElementById('export-format');
     const overlay = document.getElementById('generation-overlay');
     const progressFill = document.getElementById('progress-fill');
-    const downloadVideoBtn = document.getElementById('download-video-btn');
     const closeOverlayBtn = document.getElementById('close-overlay-btn');
 
-    // --- Init ---
-    // Add default clips
-    addClip('media', 0, 8, { bgType: 'color', color: '#1a1a2e' });
-    addClip('text', 1, 6, { 
-        text: "Cinematic Text", 
-        font: "'Inter', sans-serif", 
-        size: 36, color: "#ffffff", bgColor: "transparent", 
-        effect: "none", bold: true, italic: false, x: 30, y: 30 
-    });
-
-
-    updateRuler();
-    seekTo(0);
-
-    // --- Toolbar Interaction Logic ---
-    videoRatioBtn.addEventListener('change', (e) => {
-        APP.ratio = e.target.value;
-        if (APP.ratio === '9:16') { videoFrame.style.width = '270px'; videoFrame.style.height = '480px'; }
-        else if (APP.ratio === '16:9') { videoFrame.style.width = '480px'; videoFrame.style.height = '270px'; }
-        else if (APP.ratio === '3:4') { videoFrame.style.width = '360px'; videoFrame.style.height = '480px'; }
-    });
-
-    cropMediaBtn.addEventListener('click', () => {
-        if (!APP.selectedClipId) return alert('Select an image or video clip first.');
-        const c = getClip(APP.selectedClipId);
-        if (c && c.track === 'media') {
-            c.objectFit = c.objectFit === 'contain' ? 'cover' : 'contain';
-            renderVideoFrame();
-        } else alert('Select a media clip (Page/Scene) to crop.');
-    });
-
-    applyTransitionBtn.addEventListener('click', () => {
-        if (APP.tracks.media.length < 2) return alert('Add at least 2 scenes to apply transitions between them.');
-        APP.tracks.media.forEach((clip, i) => { if (i > 0) clip.transition = 'fade-slide'; });
-        seekTo(Math.max(0, APP.tracks.media[0].end - 0.5));
-        if (!APP.playing) tlPlayBtn.click();
-    });
-
-    applyTextAnimBtn.addEventListener('click', () => {
-        if (APP.tracks.media.length === 0) return alert('Please add a scene and text first.');
-        const scene1End = APP.tracks.media[0].end;
-        let modified = false;
-        APP.tracks.text.forEach(clip => {
-            clip.effect = (clip.start < scene1End) ? 'fade-scale' : 'staggered-slide';
-            modified = true;
+    // --- Initialization ---
+    function init() {
+        addClip('media', 0, 10, { bgType: 'gradient', grad1: '#10b981', grad2: '#3b82f6', angle: 135 });
+        addClip('text', 1, 8, { 
+            text: "TEXT TO VIDEO\nSTUDIO PRO", 
+            font: "'Outfit', sans-serif", 
+            size: 48, color: "#ffffff", bgColor: "transparent", 
+            effect: "none", bold: true, italic: false, x: 50, y: 50, speed: 5
         });
-        if (modified) { seekTo(0); if (!APP.playing) tlPlayBtn.click(); }
-        else alert('Please add text clips first.');
-    });
 
-    // --- Timeline Interaction Logic ---
-    function updateRuler() {
-        const totalPixels = APP.duration * APP.zoom;
-        document.querySelectorAll('.tracks-container, .ruler-container').forEach(el => {
-            el.style.width = `${totalPixels}px`;
-            el.style.minWidth = `${totalPixels}px`;
-        });
-        // Create repeating tick marks
-        const gridBg = `repeating-linear-gradient(90deg, transparent, transparent ${APP.zoom - 1}px, rgba(255,255,255,0.1) ${APP.zoom}px)`;
-        document.querySelectorAll('.track-grid').forEach(el => el.style.background = gridBg);
-    }
-
-    tlZoom.addEventListener('input', (e) => {
-        APP.zoom = parseInt(e.target.value);
         updateRuler();
-        renderTimelineClips();
-        updatePlayheadUI();
-    });
+        updateRatioUI();
+        seekTo(0);
+        setupEventListeners();
+    }
 
-    // Playhead Drag
-    let isDraggingPlayhead = false;
-    playhead.addEventListener('mousedown', () => isDraggingPlayhead = true);
-    document.addEventListener('mouseup', () => isDraggingPlayhead = false);
+    function setupEventListeners() {
+        if (sidebarToggle) sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+        if (newProjectBtn) newProjectBtn.addEventListener('click', () => { if(confirm("Start a new project? Unsaved changes will be lost.")) window.location.reload(); });
+        if (videoRatioBtn) videoRatioBtn.addEventListener('change', (e) => { APP.ratio = e.target.value; updateRatioUI(); renderVideoFrame(); });
+        
+        if (tlZoom) tlZoom.addEventListener('input', (e) => { APP.zoom = parseInt(e.target.value); updateRuler(); renderTimelineClips(); updatePlayheadUI(); });
+
+        const startPlayheadDrag = (e) => {
+            e.preventDefault();
+            const moveHandler = (moveEvent) => {
+                const clientX = moveEvent.touches ? moveEvent.touches[0].clientX : moveEvent.clientX;
+                const rect = tracksViewport.getBoundingClientRect();
+                const x = clientX - rect.left + tracksViewport.scrollLeft;
+                seekTo(Math.max(0, Math.min(APP.duration, x / APP.zoom)));
+            };
+            const stopHandler = () => { document.removeEventListener('mousemove', moveHandler); document.removeEventListener('mouseup', stopHandler); document.removeEventListener('touchmove', moveHandler); document.removeEventListener('touchend', stopHandler); };
+            document.addEventListener('mousemove', moveHandler); document.addEventListener('mouseup', stopHandler); document.addEventListener('touchmove', moveHandler, { passive: false }); document.addEventListener('touchend', stopHandler);
+        };
+        if (playheadHandle) { playheadHandle.addEventListener('mousedown', startPlayheadDrag); playheadHandle.addEventListener('touchstart', startPlayheadDrag, { passive: false }); }
+        tracksViewport.addEventListener('mousedown', (e) => { if (e.target.id === 'tl-ruler' || e.target.parentElement.id === 'tl-ruler') { const rect = tracksViewport.getBoundingClientRect(); const x = e.clientX - rect.left + tracksViewport.scrollLeft; seekTo(Math.max(0, Math.min(APP.duration, x / APP.zoom))); } });
+
+        if (tlPlayBtn) tlPlayBtn.addEventListener('click', togglePlayback);
+        document.getElementById('add-media-clip-btn').addEventListener('click', () => addClip('media', APP.time, 5, { bgType: 'color', color: '#1a1a2e', objectFit: 'cover' }));
+        document.getElementById('add-text-clip-btn').addEventListener('click', () => addClip('text', APP.time, 4, { text: "New Text", font: "'Outfit', sans-serif", size: 36, color: '#ffffff', bgColor: 'transparent', effect: 'none', speed: 5, x: 50, y: 50 }));
+        document.getElementById('add-audio-clip-btn').addEventListener('click', () => addClip('audio', 0, APP.duration, { src: null, volume: 100 }));
+
+        if (bgType) bgType.addEventListener('change', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.bgType = e.target.value; updateMediaInspectorVisibility(); renderVideoFrame(); renderTimelineClips(); } });
+        if (bgColorVal) bgColorVal.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.color = e.target.value; bgColorHex.value = e.target.value; renderVideoFrame(); } });
+        if (bgColorHex) bgColorHex.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c && /^#[0-9A-F]{3,6}$/i.test(e.target.value)) { c.color = e.target.value; bgColorVal.value = e.target.value; renderVideoFrame(); } });
+        if (bgGrad1) bgGrad1.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.grad1 = e.target.value; renderVideoFrame(); } });
+        if (bgGrad2) bgGrad2.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.grad2 = e.target.value; renderVideoFrame(); } });
+        if (bgGradAngle) bgGradAngle.addEventListener('input', (e) => { if(document.getElementById('grad-angle-val')) document.getElementById('grad-angle-val').innerText = e.target.value; const c = getClip(APP.selectedClipId); if(c) { c.angle = e.target.value; renderVideoFrame(); } });
+        if (bgFileUpload) bgFileUpload.addEventListener('change', handleMediaUpload);
+        if (textContent) textContent.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.text = e.target.value; renderVideoFrame(); renderTimelineClips(); } });
+        if (textFont) textFont.addEventListener('change', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.font = e.target.value; renderVideoFrame(); } });
+        if (textSize) textSize.addEventListener('input', (e) => { if(document.getElementById('text-size-val')) document.getElementById('text-size-val').innerText = e.target.value + 'px'; const c = getClip(APP.selectedClipId); if(c) { c.size = parseInt(e.target.value); renderVideoFrame(); } });
+        if (textColor) textColor.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.color = e.target.value; renderVideoFrame(); } });
+        if (textBgColor) textBgColor.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.bgColor = e.target.value; renderVideoFrame(); } });
+        if (textEffect) textEffect.addEventListener('change', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.effect = e.target.value; updateEffectSettingsVisibility(); renderVideoFrame(); } });
+        if (effectSpeed) effectSpeed.addEventListener('input', (e) => { if(document.getElementById('effect-speed-val')) document.getElementById('effect-speed-val').innerText = e.target.value; const c = getClip(APP.selectedClipId); if(c) { c.speed = parseInt(e.target.value); renderVideoFrame(); } });
+        
+        if (btnBold) btnBold.addEventListener('click', () => { const c = getClip(APP.selectedClipId); if(c) { c.bold = !c.bold; btnBold.classList.toggle('active', c.bold); renderVideoFrame(); } });
+        if (btnItalic) btnItalic.addEventListener('click', () => { const c = getClip(APP.selectedClipId); if(c) { c.italic = !c.italic; btnItalic.classList.toggle('active', c.italic); renderVideoFrame(); } });
+
+        iconButtons.forEach(btn => btn.addEventListener('click', () => { const c = getClip(APP.selectedClipId); if (c) { c.text = (c.text || '') + ` <i class="fa-solid ${btn.getAttribute('data-icon')}"></i>`; textContent.value = c.text; renderVideoFrame(); renderTimelineClips(); } }));
+        if (audioFileUpload) audioFileUpload.addEventListener('change', handleAudioUpload);
+        if (audioVol) audioVol.addEventListener('input', (e) => { if(document.getElementById('audio-vol-val')) document.getElementById('audio-vol-val').innerText = e.target.value + '%'; const c = getClip(APP.selectedClipId); if(c) { c.volume = parseInt(e.target.value); if(c.audioObj) c.audioObj.volume = c.volume / 100; } });
+
+        if (finishBtn) finishBtn.addEventListener('click', finishAndSaveHandler);
+        if (closeOverlayBtn) closeOverlayBtn.addEventListener('click', () => overlay.classList.add('hidden'));
+
+        window.addEventListener('keydown', (e) => { if ((e.key === 'Delete' || e.key === 'Backspace') && document.activeElement.tagName === 'BODY' && APP.selectedClipId) { const clip = getClip(APP.selectedClipId); if (clip) { APP.tracks[clip.track] = APP.tracks[clip.track].filter(x => x.id !== clip.id); if (clip.audioObj) { clip.audioObj.pause(); clip.audioObj.src = ''; } selectClip(null, null); renderTimelineClips(); renderVideoFrame(); } } });
+    }
+
+    function updateRatioUI() { if (!videoFrame) return; const r = APP.ratio.split(':'); videoFrame.style.aspectRatio = `${r[0]} / ${r[1]}`; }
+    function updateRuler() { const totalPixels = APP.duration * APP.zoom; document.querySelectorAll('.tracks-container, .ruler-container').forEach(el => { el.style.width = `${totalPixels}px`; el.style.minWidth = `${totalPixels}px`; }); const gridBg = `repeating-linear-gradient(90deg, transparent, transparent ${APP.zoom - 1}px, rgba(255,255,255,0.03) ${APP.zoom}px)`; document.querySelectorAll('.track-grid').forEach(el => el.style.background = gridBg); }
+    function seekTo(time) { APP.time = Math.max(0, Math.min(APP.duration, time)); updatePlayheadUI(); renderVideoFrame(); if (APP.playing) syncAudioTime(); }
+    function updatePlayheadUI() { const px = APP.time * APP.zoom; if (playhead) playhead.style.left = `${px}px`; if (playheadHandle) playheadHandle.style.left = `${px - 8}px`; const ts = (t) => { const m = Math.floor(t / 60).toString().padStart(2, '0'); const s = Math.floor(t % 60).toString().padStart(2, '0'); return `${m}:${s}`; }; if (tlTimeCounter) tlTimeCounter.innerText = `${ts(APP.time)} / ${ts(APP.duration)}`; if (playerTimeDisplay) playerTimeDisplay.innerText = `${ts(APP.time)}.${Math.floor((APP.time % 1) * 10)}`; }
     
-    tracksViewport.addEventListener('mousemove', (e) => {
-        if (!isDraggingPlayhead) return;
-        const rect = trackContents.media.parentElement.parentElement.getBoundingClientRect(); // .tracks-container
-        let x = e.clientX - rect.left;
-        let pTime = Math.max(0, Math.min(APP.duration, x / APP.zoom));
-        seekTo(pTime);
-    });
+    let lastTimestamp = 0;
+    function playLoop(timestamp) { if (!APP.playing) return; if (!lastTimestamp) lastTimestamp = timestamp; const dt = (timestamp - lastTimestamp) / 1000; lastTimestamp = timestamp; APP.time += dt; if (APP.time >= APP.duration) { APP.time = APP.duration; togglePlayback(); } updatePlayheadUI(); renderVideoFrame(); requestAnimationFrame(playLoop); }
+    function togglePlayback() { APP.playing = !APP.playing; if (tlPlayBtn) tlPlayBtn.innerHTML = APP.playing ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>'; if (APP.playing) { if (APP.time >= APP.duration) APP.time = 0; lastTimestamp = 0; syncAudioPlay(); requestAnimationFrame(playLoop); } else { syncAudioPause(); } }
 
-    tracksViewport.addEventListener('mousedown', (e) => {
-        if(e.target.id === 'tl-ruler' || e.target.classList.contains('ruler-container')) {
-             const rect = document.querySelector('.tracks-container').getBoundingClientRect();
-             let x = e.clientX - rect.left;
-             seekTo(Math.max(0, Math.min(APP.duration, x / APP.zoom)));
-        }
-    });
-
-    function seekTo(time) {
-        APP.time = time;
-        updatePlayheadUI();
-        renderVideoFrame();
-    }
-
-    function updatePlayheadUI() {
-        const px = APP.time * APP.zoom;
-        playhead.style.left = `${px}px`;
-        const mins = Math.floor(APP.time / 60).toString().padStart(2, '0');
-        const secs = Math.floor(APP.time % 60).toString().padStart(2, '0');
-        const d_mins = Math.floor(APP.duration / 60).toString().padStart(2, '0');
-        const d_secs = Math.floor(APP.duration % 60).toString().padStart(2, '0');
-        tlTimeCounter.innerText = `${mins}:${secs} / ${d_mins}:${d_secs}`;
-        playerTimeDisplay.innerText = `${mins}:${secs}.${Math.floor((APP.time%1)*10)}`;
-    }
-
-    // Playback
-    let animFrame;
-    let lastAnimTime;
-    tlPlayBtn.addEventListener('click', togglePlayback);
-
-    function togglePlayback() {
-        APP.playing = !APP.playing;
-        if (APP.playing) {
-            tlPlayBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-            if (APP.time >= APP.duration) seekTo(0);
-            lastAnimTime = performance.now();
-            syncAudioPlay();
-            animFrame = requestAnimationFrame(playLoop);
-        } else {
-            tlPlayBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-            syncAudioPause();
-            cancelAnimationFrame(animFrame);
-        }
-    }
-
-    function playLoop(timestamp) {
-        if (!APP.playing) return;
-        const dt = (timestamp - lastAnimTime) / 1000;
-        lastAnimTime = timestamp;
-        
-        APP.time += dt;
-        if (APP.time >= APP.duration) {
-            APP.time = APP.duration;
-            togglePlayback();
-        }
-        updatePlayheadUI();
-        renderVideoFrame();
-        
-        if (APP.playing) animFrame = requestAnimationFrame(playLoop);
-    }
-
-    // --- Clip Management NLE ---
-    function generateId() { return 'clip_' + Math.random().toString(36).substr(2, 9); }
-
-    function addClip(trackType, start, len, props = {}) {
-        const id = generateId();
-        const clip = { id, track: trackType, start, end: start + len, ...props };
-        APP.tracks[trackType].push(clip);
-        
-        // Handle audio object creation
-        if (trackType === 'audio') {
-            clip.audioObj = new Audio(props.src);
-            clip.audioObj.volume = (props.volume !== undefined) ? props.volume / 100 : 1;
-        }
-
-        renderTimelineClips();
-        seekTo(APP.time);
-        selectClip(id, trackType);
-    }
-
-    function getClip(id) {
-        for(let track in APP.tracks) {
-            let c = APP.tracks[track].find(x => x.id === id);
-            if (c) return c;
-        }
-        return null;
-    }
-
-    function renderTimelineClips() {
-        for (let track in trackContents) {
-            trackContents[track].innerHTML = '';
-            APP.tracks[track].forEach(clip => {
-                const el = document.createElement('div');
-                el.className = `clip-node ${APP.selectedClipId === clip.id ? 'selected' : ''}`;
-                el.dataset.id = clip.id;
-                el.dataset.track = track;
-                el.style.left = `${clip.start * APP.zoom}px`;
-                el.style.width = `${(clip.end - clip.start) * APP.zoom}px`;
-
-                let title = 'Clip';
-                if(track === 'media') title = clip.bgType === 'color' ? 'Solid Scene' : (clip.bgType === 'gradient' ? 'Gradient Scene' : 'Media Scene');
-                if(track === 'text') title = clip.text ? clip.text.split('\n')[0] : 'Text';
-                if(track === 'audio') title = 'Audio Track';
-
-                let icon = track === 'media' ? '<i class="fa-solid fa-image"></i>&nbsp;' : 
-                          (track === 'text' ? '<i class="fa-solid fa-font"></i>&nbsp;' : '<i class="fa-solid fa-music"></i>&nbsp;');
-
-                el.innerHTML = `
-                    ${icon} <span class="clip-innerText">${title}</span>
-                    <div class="clip-handle left"></div>
-                    <div class="clip-handle right"></div>
-                `;
-
-                // Event Listeners for Drag/Resize
-                makeClipInteractive(el, clip);
-                
-                el.addEventListener('mousedown', (e) => {
-                    if(!e.target.classList.contains('clip-handle')) selectClip(clip.id, track);
-                });
-
-                trackContents[track].appendChild(el);
-            });
-        }
-    }
-
-    function makeClipInteractive(el, clip) {
-        let isDragging = false, isResizingLeft = false, isResizingRight = false;
-        let startX, initStart, initEnd;
-
-        // Note: Timeline coordinates
-        el.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('left')) isResizingLeft = true;
-            else if (e.target.classList.contains('right')) isResizingRight = true;
-            else isDragging = true;
-
-            startX = e.clientX;
-            initStart = clip.start;
-            initEnd = clip.end;
-            e.stopPropagation(); // prevent playhead jump
-            if(!APP.playing) selectClip(clip.id, clip.track);
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if(!isDragging && !isResizingLeft && !isResizingRight) return;
-            
-            const dx = (e.clientX - startX) / APP.zoom; // delta in seconds
-            
-            if (isDragging) {
-                let nStart = initStart + dx;
-                let nEnd = initEnd + dx;
-                if (nStart < 0) { nStart = 0; nEnd = initEnd - initStart; }
-                if (nEnd > APP.duration) { nEnd = APP.duration; nStart = APP.duration - (initEnd - initStart); } // Snap to end
-                clip.start = nStart;
-                clip.end = nEnd;
-            } else if (isResizingLeft) {
-                let nStart = initStart + dx;
-                if (nStart < 0) nStart = 0;
-                if (nStart >= clip.end - 0.5) nStart = clip.end - 0.5; // Min size 0.5s
-                clip.start = nStart;
-            } else if (isResizingRight) {
-                let nEnd = initEnd + dx;
-                if (nEnd > APP.duration) nEnd = APP.duration;
-                if (nEnd <= clip.start + 0.5) nEnd = clip.start + 0.5;
-                clip.end = nEnd;
-            }
-
-            el.style.left = `${clip.start * APP.zoom}px`;
-            el.style.width = `${(clip.end - clip.start) * APP.zoom}px`;
-            
-            // Re-render
-            if(!APP.playing) renderVideoFrame();
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false; isResizingLeft = false; isResizingRight = false;
-        });
-    }
-
-    // Add buttons
-    document.getElementById('add-media-clip-btn').addEventListener('click', () => {
-        addClip('media', APP.time, 4, { bgType: 'color', color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0') });
-    });
-    document.getElementById('add-text-clip-btn').addEventListener('click', () => {
-        addClip('text', APP.time, 4, { text: "New Text", font: "'Inter'", size: 30, color: '#fff', bgColor: 'transparent', effect: 'none', x: 50, y: 50 });
-    });
-    document.getElementById('add-audio-clip-btn').addEventListener('click', () => {
-        addClip('audio', 0, APP.duration, { src: null, volume: 100 });
-    });
-
-    // Delete
-    btnDelete.addEventListener('click', () => {
-        if (!APP.selectedClipId) return;
-        const clip = getClip(APP.selectedClipId);
-        if (clip) {
-             APP.tracks[clip.track] = APP.tracks[clip.track].filter(c => c.id !== clip.id);
-             if (clip.audioObj) { clip.audioObj.pause(); clip.audioObj.src = ''; }
-        }
-        selectClip(null, null);
-        renderTimelineClips();
-        renderVideoFrame();
-    });
-
-    // --- Properties Inspector NLE ---
+    function addClip(trackType, start, len, props = {}) { const id = 'clip_' + Math.random().toString(36).substr(2, 9); const clip = { id, track: trackType, start, end: start + len, ...props }; APP.tracks[trackType].push(clip); renderTimelineClips(); selectClip(id, trackType); renderVideoFrame(); }
+    function getClip(id) { for(let t in APP.tracks) { const c = APP.tracks[t].find(x => x.id === id); if (c) return c; } return null; }
     function selectClip(id, track) {
-        APP.selectedClipId = id;
-        document.querySelectorAll('.clip-node').forEach(n => n.classList.remove('selected'));
-        if (id) {
-            const el = document.querySelector(`.clip-node[data-id="${id}"]`);
-            if(el) el.classList.add('selected');
-        }
-
-        document.querySelectorAll('.prop-section').forEach(p => p.classList.remove('active'));
-        btnDelete.style.display = id ? 'block' : 'none';
-
-        if (!id) { propEmpty.classList.add('active'); return; }
-
+        APP.selectedClipId = id; document.querySelectorAll('.clip-node').forEach(n => n.classList.remove('selected')); if (id) { const el = document.querySelector(`.clip-node[data-id="${id}"]`); if(el) el.classList.add('selected'); }
+        document.querySelectorAll('.prop-section').forEach(p => p.classList.remove('active')); if (!id) { if(propEmpty) propEmpty.classList.add('active'); return; }
         const clip = getClip(id);
-        if (!clip) return;
-
-        if (track === 'media') {
-            propMedia.classList.add('active');
-            bgType.value = clip.bgType || 'color';
-            updateMediaInspectorVisibility();
-            if(clip.bgType === 'color') bgColorVal.value = clip.color || '#000000';
-            if(clip.bgType === 'gradient') {
-                bgGrad1.value = clip.grad1 || '#ff0080';
-                bgGrad2.value = clip.grad2 || '#7928ca';
-                bgGradAngle.value = clip.angle || 135;
-                document.getElementById('grad-angle-val').innerText = bgGradAngle.value;
-            }
-            if(clip.bgType === 'image' || clip.bgType === 'video') {
-                bgFileName.innerText = clip.file ? clip.file.name : "No file loaded";
-            }
-        } 
-        else if (track === 'text') {
-            propText.classList.add('active');
-            textContent.value = clip.text || '';
-            textFont.value = clip.font || "'Inter', sans-serif";
-            textSize.value = clip.size || 30;
-            document.getElementById('text-size-val').innerText = textSize.value;
-            textColor.value = rgb2hex(clip.color) || '#ffffff';
-            textBgColor.value = clip.bgColor === 'transparent' ? '#000000' : (rgb2hex(clip.bgColor) || '#000000');
-            textEffect.value = clip.effect || 'none';
-            btnBold.classList.toggle('active', clip.bold);
-            btnItalic.classList.toggle('active', clip.italic);
+        if (track === 'media') { if(propMedia) propMedia.classList.add('active'); bgType.value = clip.bgType || 'color'; updateMediaInspectorVisibility(); if(bgColorVal) bgColorVal.value = clip.color || '#1a1a2e'; if(bgColorHex) bgColorHex.value = bgColorVal.value; if(bgGrad1) bgGrad1.value = clip.grad1 || '#10b981'; if(bgGrad2) bgGrad2.value = clip.grad2 || '#3b82f6'; if(bgGradAngle) bgGradAngle.value = clip.angle || 135; if(bgFileName) bgFileName.innerText = clip.fileName || ""; }
+        else if (track === 'text') { 
+            if(propText) propText.classList.add('active'); textContent.value = clip.text || ''; textFont.value = clip.font || "'Outfit', sans-serif"; textSize.value = clip.size || 36; if(document.getElementById('text-size-val')) document.getElementById('text-size-val').innerText = textSize.value + 'px'; textColor.value = clip.color || "#ffffff"; if(textBgColor) textBgColor.value = clip.bgColor === 'transparent' ? '#000000' : clip.bgColor; textEffect.value = clip.effect || 'none'; 
+            updateEffectSettingsVisibility();
+            if(effectSpeed) { effectSpeed.value = clip.speed || 5; if(document.getElementById('effect-speed-val')) document.getElementById('effect-speed-val').innerText = effectSpeed.value; }
+            btnBold.classList.toggle('active', clip.bold); btnItalic.classList.toggle('active', clip.italic); 
         }
-        else if (track === 'audio') {
-            propAudio.classList.add('active');
-            audioFileName.innerText = clip.file ? clip.file.name : "No file loaded";
-            audioVol.value = clip.volume !== undefined ? clip.volume : 100;
-            document.getElementById('audio-vol-val').innerText = audioVol.value;
-        }
+        else if (track === 'audio') { if(propAudio) propAudio.classList.add('active'); audioFileName.innerText = clip.fileName || ""; audioVol.value = clip.volume || 100; }
     }
 
-    // Media properties handlers
-    function updateMediaInspectorVisibility() {
-        bgColorGroup.style.display = bgType.value === 'color' ? 'flex' : 'none';
-        bgGradGroup.style.display = bgType.value === 'gradient' ? 'flex' : 'none';
-        bgUploadGroup.style.display = (bgType.value === 'image' || bgType.value === 'video') ? 'flex' : 'none';
-    }
-    bgType.addEventListener('change', (e) => {
-        const c = getClip(APP.selectedClipId); if(c) { c.bgType = e.target.value; updateMediaInspectorVisibility(); renderVideoFrame(); renderTimelineClips(); }
-    });
-    bgColorVal.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.color = e.target.value; renderVideoFrame(); } });
-    bgGrad1.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.grad1 = e.target.value; renderVideoFrame(); } });
-    bgGrad2.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.grad2 = e.target.value; renderVideoFrame(); } });
-    bgGradAngle.addEventListener('input', (e) => { 
-        document.getElementById('grad-angle-val').innerText = e.target.value;
-        const c = getClip(APP.selectedClipId); if(c) { c.angle = e.target.value; renderVideoFrame(); } 
-    });
-    bgFileUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
-        const c = getClip(APP.selectedClipId); 
-        if(c) { 
-            c.file = file; 
-            bgFileName.innerText = file.name;
-            const url = URL.createObjectURL(file);
-            c.srcUrl = url;
-            if (file.type.startsWith('video/')) {
-                c.bgType = 'video';
-                bgType.value = 'video';
-                c.videoObj = document.createElement('video');
-                c.videoObj.src = url;
-                c.videoObj.muted = true;
-                c.videoObj.loop = true;
-            } else {
-                c.bgType = 'image';
-                bgType.value = 'image';
-            }
-            updateMediaInspectorVisibility();
-            renderTimelineClips();
-            renderVideoFrame();
-        }
-    });
-
-    // Text Properties handlers
-    textContent.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.text = e.target.value; renderVideoFrame(); renderTimelineClips(); } });
-    textFont.addEventListener('change', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.font = e.target.value; renderVideoFrame(); } });
-    textSize.addEventListener('input', (e) => { document.getElementById('text-size-val').innerText = e.target.value; const c = getClip(APP.selectedClipId); if(c) { c.size = e.target.value; renderVideoFrame(); } });
-    textColor.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.color = e.target.value; renderVideoFrame(); } });
-    textBgColor.addEventListener('input', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.bgColor = e.target.value; renderVideoFrame(); } });
-    textEffect.addEventListener('change', (e) => { const c = getClip(APP.selectedClipId); if(c) { c.effect = e.target.value; renderVideoFrame(); } });
-    btnBold.addEventListener('click', () => { const c = getClip(APP.selectedClipId); if(c) { c.bold = !c.bold; btnBold.classList.toggle('active', c.bold); renderVideoFrame(); } });
-    btnItalic.addEventListener('click', () => { const c = getClip(APP.selectedClipId); if(c) { c.italic = !c.italic; btnItalic.classList.toggle('active', c.italic); renderVideoFrame(); } });
-
-    // FontAwesome Icon Inserter NLE
-    iconButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-             const iconClass = btn.getAttribute('data-icon');
-             const c = getClip(APP.selectedClipId);
-             if (c) {
-                 // Append FontAwesome HTML structure
-                 const iconHTML = `<i class="fa-solid ${iconClass}"></i>`;
-                 c.text = (c.text || '') + ' ' + iconHTML;
-                 textContent.value = c.text;
-                 renderVideoFrame();
-                 renderTimelineClips();
-             }
-        });
-    });
-
-    // Audio properties
-    audioFileUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
-        const c = getClip(APP.selectedClipId);
-        if(c) {
-            c.file = file;
-            audioFileName.innerText = file.name;
-            const url = URL.createObjectURL(file);
-            c.src = url;
-            if(!c.audioObj) c.audioObj = new Audio();
-            c.audioObj.src = url;
-        }
-    });
-    audioVol.addEventListener('input', (e) => {
-        document.getElementById('audio-vol-val').innerText = e.target.value;
-        const c = getClip(APP.selectedClipId);
-        if(c) {
-            c.volume = parseInt(e.target.value);
-            if(c.audioObj) c.audioObj.volume = c.volume / 100;
-        }
-    });
-
-    // Audio Sync
-    function syncAudioPlay() {
-        APP.tracks.audio.forEach(aClip => {
-            if(aClip.audioObj && aClip.src && APP.time >= aClip.start && APP.time <= aClip.end) {
-                // Determine offset
-                const offset = APP.time - aClip.start;
-                if(aClip.audioObj.readyState >= 2) {
-                    aClip.audioObj.currentTime = offset;
-                    aClip.audioObj.play().catch(e => console.log('Audio Autoplay policy:', e));
-                }
-            }
-        });
-        APP.tracks.media.forEach(mClip => {
-             if (mClip.bgType === 'video' && mClip.videoObj && APP.time >= mClip.start && APP.time <= mClip.end) {
-                  const offset = APP.time - mClip.start;
-                  if(mClip.videoObj.readyState >= 2) {
-                      mClip.videoObj.currentTime = offset;
-                      mClip.videoObj.play();
-                  }
-             }
-        });
-    }
-    function syncAudioPause() {
-        APP.tracks.audio.forEach(aClip => { if(aClip.audioObj) aClip.audioObj.pause(); });
-        APP.tracks.media.forEach(mClip => { if(mClip.bgType === 'video' && mClip.videoObj) mClip.videoObj.pause(); });
+    function updateMediaInspectorVisibility() { if(bgColorGroup) bgColorGroup.style.display = bgType.value === 'color' ? 'flex' : 'none'; if(bgGradGroup) bgGradGroup.style.display = bgType.value === 'gradient' ? 'flex' : 'none'; if(bgUploadGroup) bgUploadGroup.style.display = ['image', 'video'].includes(bgType.value) ? 'flex' : 'none'; }
+    function updateEffectSettingsVisibility() {
+        const hasMotion = ['scroll-left', 'scroll-right', 'scroll-up', 'scroll-down', 'marquee-left', 'marquee-right'].includes(textEffect.value);
+        document.getElementById('effect-settings').style.display = hasMotion ? 'block' : 'none';
     }
 
-    // --- Video Frame Rendering Engine NLE ---
-
-    function getActiveClips(trackItems, time) {
-        return trackItems.filter(c => time >= c.start && time <= c.end);
-    }
+    function handleMediaUpload(e) { const file = e.target.files[0]; if(!file) return; const c = getClip(APP.selectedClipId); if(c) { c.fileName = file.name; if(bgFileName) bgFileName.innerText = file.name; const url = URL.createObjectURL(file); c.srcUrl = url; if (file.type.startsWith('video/')) { c.bgType = 'video'; c.videoObj = document.createElement('video'); c.videoObj.src = url; c.videoObj.muted = true; c.videoObj.loop = true; c.videoObj.playsInline = true; } else { c.bgType = 'image'; c.imgObj = new Image(); c.imgObj.src = url; } updateMediaInspectorVisibility(); renderTimelineClips(); renderVideoFrame(); } }
+    function handleAudioUpload(e) { const file = e.target.files[0]; if(!file) return; const c = getClip(APP.selectedClipId); if(c) { c.fileName = file.name; if(audioFileName) audioFileName.innerText = file.name; c.audioObj = new Audio(URL.createObjectURL(file)); c.audioObj.volume = (c.volume || 100) / 100; } }
+    function makeClipInteractive(el, clip) { el.addEventListener('mousedown', (e) => { e.preventDefault(); const startX = (e.touches ? e.touches[0].clientX : e.clientX); const initStart = clip.start; const initEnd = clip.end; const isL = e.target.classList.contains('left'); const isR = e.target.classList.contains('right'); const move = (me) => { const dx = ((me.touches ? me.touches[0].clientX : me.clientX) - startX) / APP.zoom; if (isL) clip.start = Math.max(0, Math.min(clip.end - 0.5, initStart + dx)); else if (isR) clip.end = Math.max(clip.start + 0.5, Math.min(APP.duration, initEnd + dx)); else { const dur = initEnd - initStart; clip.start = Math.max(0, Math.min(APP.duration - dur, initStart + dx)); clip.end = clip.start + dur; } el.style.left = `${clip.start * APP.zoom}px`; el.style.width = `${(clip.end - clip.start) * APP.zoom}px`; renderVideoFrame(); }; const stop = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', stop); renderTimelineClips(); }; document.addEventListener('mousemove', move); document.addEventListener('mouseup', stop); e.stopPropagation(); }); }
+    function renderTimelineClips() { Object.keys(trackContents).forEach(track => { trackContents[track].innerHTML = ''; APP.tracks[track].forEach(clip => { const el = document.createElement('div'); el.className = `clip-node ${APP.selectedClipId === clip.id ? 'selected' : ''}`; el.style.left = `${clip.start * APP.zoom}px`; el.style.width = `${(clip.end - clip.start) * APP.zoom}px`; el.innerHTML = `<div class="clip-handle left"></div><span class="clip-innerText">${clip.text ? clip.text.split('\n')[0] : (clip.bgType || 'Clip')}</span><div class="clip-handle right"></div>`; el.addEventListener('click', () => selectClip(clip.id, track)); makeClipInteractive(el, clip); trackContents[track].appendChild(el); }); }); }
 
     function renderVideoFrame() {
-        // 1. Render Background NLE
-        const activeMedia = APP.tracks.media.filter((c, i) => {
-            const nextClip = APP.tracks.media[i+1];
-            const extendedEnd = (nextClip && nextClip.transition === 'fade-slide') ? c.end + 0.5 : c.end;
-            return APP.time >= c.start && APP.time <= extendedEnd;
+        const time = APP.time; frameBg.innerHTML = ''; frameObjects.innerHTML = '';
+        APP.tracks.media.filter(c => time >= c.start && time <= c.end).forEach(m => { const el = document.createElement('div'); el.className = 'frame-layer'; if (m.bgType === 'color') el.style.backgroundColor = m.color; else if (m.bgType === 'gradient') el.style.background = `linear-gradient(${m.angle}deg, ${m.grad1}, ${m.grad2})`; else if (m.bgType === 'image' && m.srcUrl) { el.style.backgroundImage = `url(${m.srcUrl})`; el.style.backgroundSize = m.objectFit || 'cover'; el.style.backgroundPosition = 'center'; } else if (m.bgType === 'video' && m.videoObj) { m.videoObj.currentTime = time - m.start; m.videoObj.style.width = '100%'; m.videoObj.style.height = '100%'; m.videoObj.style.objectFit = m.objectFit || 'cover'; el.appendChild(m.videoObj); } frameBg.appendChild(el); });
+        APP.tracks.text.filter(c => time >= c.start && time <= c.end).forEach(t => { 
+            const el = document.createElement('div'); el.className = 'frame-obj-text'; el.innerHTML = t.text; 
+            const dt = time - t.start; const spd = t.speed || 5;
+            let tx = t.x, ty = t.y; 
+            
+            if (t.effect === 'scroll-left') tx -= dt * spd * 10;
+            else if (t.effect === 'scroll-right') tx += dt * spd * 10;
+            else if (t.effect === 'scroll-up') ty -= dt * spd * 10;
+            else if (t.effect === 'scroll-down') ty += dt * spd * 10;
+            else if (t.effect === 'marquee-left') tx = 110 - ((dt * spd * 20) % 120);
+            else if (t.effect === 'marquee-right') tx = -10 + ((dt * spd * 20) % 120);
+
+            el.style.cssText = `left: ${tx}%; top: ${ty}%; font-family: ${t.font}; font-size: ${t.size}px; color: ${t.color}; background-color: ${t.bgColor}; font-weight: ${t.bold ? 'bold' : 'normal'}; font-style: ${t.italic ? 'italic' : 'normal'}; transform: translate(-50%, -50%);`; 
+            makeTextDraggable(el, t); frameObjects.appendChild(el); 
         });
-
-        frameBg.innerHTML = '';
-        frameBg.style.background = '#000000';
-        
-        activeMedia.forEach((m) => {
-            const layer = document.createElement('div');
-            layer.style.position = 'absolute';
-            layer.style.top = '0';
-            layer.style.left = '0';
-            layer.style.width = '100%';
-            layer.style.height = '100%';
-            
-            // Transition Logic
-            let opacity = 1;
-            let transform = 'none';
-            if (m.transition === 'fade-slide') {
-                const timeIn = APP.time - m.start;
-                if (timeIn >= 0 && timeIn < 0.5) {
-                    const p = timeIn / 0.5; // 0 to 1
-                    opacity = p;
-                    transform = `translateX(${(1 - p) * 100}%)`;
-                }
-            }
-            if (APP.time >= m.end) {
-                const timeOut = APP.time - m.end;
-                const p = timeOut / 0.5;
-                if (p <= 1) opacity = 1 - p;
-                else opacity = 0;
-            }
-            
-            layer.style.opacity = opacity;
-            layer.style.transform = transform;
-
-            if (m.bgType === 'color') {
-                layer.style.background = m.color || '#1a1a2e';
-            } else if (m.bgType === 'gradient') {
-                layer.style.background = `linear-gradient(${m.angle || 135}deg, ${m.grad1 || '#ff0080'}, ${m.grad2 || '#7928ca'})`;
-            } else if (m.bgType === 'image') {
-                layer.style.background = `url(${m.srcUrl}) center/${m.objectFit || 'cover'} no-repeat`;
-            } else if (m.bgType === 'video') {
-                layer.style.background = '#000';
-                if (m.videoObj) {
-                    if (!APP.playing) {
-                        m.videoObj.currentTime = Math.max(0, APP.time - m.start);
-                    }
-                    m.videoObj.style.width = '100%';
-                    m.videoObj.style.height = '100%';
-                    m.videoObj.style.objectFit = m.objectFit || 'cover';
-                    layer.appendChild(m.videoObj);
-                }
-            }
-            frameBg.appendChild(layer);
-        });
-
-        // 2. Render Text Overlays NLE
-        const activeText = getActiveClips(APP.tracks.text, APP.time);
-        
-        // Remove old texts NLE not active, add active NLE
-        // To be safe and handle animations correctly, we can recreate them, 
-        // but for editing drag we need to keep references.
-        // We will just clear and reconstruct for simplicity.
-        frameObjects.innerHTML = '';
-
-        activeText.forEach(t => {
-            const el = document.createElement('div');
-            el.className = `frame-obj-text effect-${['fade-scale','staggered-slide'].includes(t.effect) ? 'none' : (t.effect || 'none')}`;
-            if (t.id === APP.selectedClipId) el.classList.add('selected');
-            
-            // To support FontAwesome HTML NLE
-            el.innerHTML = t.text || ' ';
-            
-            el.style.fontFamily = t.font;
-            el.style.fontSize = `${t.size}px`;
-            el.style.color = t.color;
-            if(t.bgColor !== 'transparent') el.style.backgroundColor = t.bgColor;
-            el.style.fontWeight = t.bold ? 'bold' : 'normal';
-            el.style.fontStyle = t.italic ? 'italic' : 'normal';
-            
-            let tOpacity = 1;
-            let px = t.x, py = t.y;
-            let extraTransform = '';
-
-            const timeIn = APP.time - t.start;
-            if (t.effect === 'fade-scale') {
-                if (timeIn < 0.5) {
-                    const p = timeIn / 0.5;
-                    tOpacity = p;
-                    extraTransform = ` scale(${0.8 + p * 0.2})`;
-                }
-            } else if (t.effect === 'staggered-slide') {
-                if (timeIn < 0.6) {
-                    const p = Math.min(1, timeIn / 0.6);
-                    tOpacity = p;
-                    extraTransform = ` translateY(${(1 - p) * 30}px)`;
-                }
-            }
-
-            el.style.left = `${px}%`;
-            el.style.top = `${py}%`;
-            el.style.opacity = tOpacity;
-            el.style.transform = `translate(-50%, -50%)${extraTransform}`;
-
-            // Setup draggable text directly on frame
-            makeTextDraggable(el, t);
-            
-            const resizer = document.createElement('div');
-            resizer.className = 'frame-obj-resizer';
-            el.appendChild(resizer);
-
-            frameObjects.appendChild(el);
-
-            // CSS Animations handling NLE
-            if (t.effect === 'typewriter' && APP.playing) {
-                el.classList.add('anim-typewriter');
-            } else if (t.effect === 'bounce' && APP.playing) {
-                el.classList.add('anim-bounce');
-            }
-        });
-
-        // 3. Audio logic handled syncAudioPlay NLE
     }
 
-    function makeTextDraggable(el, clip) {
-        let isDragging = false, startX, startY, initX, initY;
-        
-        el.addEventListener('mousedown', (e) => {
-            if(e.target.classList.contains('frame-obj-resizer')) return; // Handle resizing here if needed
-            isDragging = true;
-            startX = e.clientX; startY = e.clientY;
-            initX = clip.x; initY = clip.y;
-            selectClip(clip.id, clip.track);
-            e.stopPropagation();
-        });
+    function makeTextDraggable(el, clip) { el.addEventListener('mousedown', (e) => { if(clip.effect && clip.effect.includes('scroll')) return; e.preventDefault(); const sX = (e.touches ? e.touches[0].clientX : e.clientX), sY = (e.touches ? e.touches[0].clientY : e.clientY); const iX = clip.x, iY = clip.y; const mv = (me) => { const rect = frameObjects.getBoundingClientRect(); clip.x = iX + (((me.touches ? me.touches[0].clientX : me.clientX) - sX) / rect.width) * 100; clip.y = iY + (((me.touches ? me.touches[0].clientY : me.clientY) - sY) / rect.height) * 100; el.style.left = `${clip.x}%`; el.style.top = `${clip.y}%`; }; const st = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', st); }; document.addEventListener('mousemove', mv); document.addEventListener('mouseup', st); e.stopPropagation(); }); }
+    function syncAudioPlay() { APP.tracks.audio.forEach(a => { if(a.audioObj && APP.time >= a.start && APP.time < a.end) { a.audioObj.currentTime = APP.time - a.start; a.audioObj.play().catch(()=>{}); } }); }
+    function syncAudioPause() { APP.tracks.audio.forEach(a => a.audioObj?.pause()); }
+    function syncAudioTime() { APP.tracks.audio.forEach(a => { if(a.audioObj) { if(APP.time >= a.start && APP.time < a.end) { if(a.audioObj.paused) a.audioObj.play().catch(()=>{}); const t = APP.time - a.start; if(Math.abs(a.audioObj.currentTime - t) > 0.1) a.audioObj.currentTime = t; } else a.audioObj.pause(); } }); }
 
-        document.addEventListener('mousemove', (e) => {
-            if(!isDragging) return;
-            // Frame is relative to viewport NLE NLE
-            const rect = frameObjects.getBoundingClientRect();
-            const dx = ((e.clientX - startX) / rect.width) * 100;
-            const dy = ((e.clientY - startY) / rect.height) * 100;
-            
-            clip.x = initX + dx;
-            clip.y = initY + dy;
-            
-            // Re-render
-            el.style.left = `${clip.x}%`;
-            el.style.top = `${clip.y}%`;
-        });
+    async function finishAndSaveHandler() { if(APP.playing) togglePlayback(); const format = exportFormat.value; overlay.classList.remove('hidden'); progressFill.style.width = '0%'; closeOverlayBtn.classList.add('hidden'); if (format === 'gif') await renderGifHandler(); else await renderVideoHandler(format); if(document.getElementById('generation-text')) document.getElementById('generation-text').innerText = "Project Saved Successfully!"; closeOverlayBtn.classList.remove('hidden'); }
+    function renderVideoHandler(userFormat = 'webm') { return new Promise(resolve => { if(document.getElementById('generation-text')) document.getElementById('generation-text').innerText = `Processing HD ${userFormat.toUpperCase()} Video...`; const canvas = document.createElement('canvas'); let cw = 1080, ch = 1920; if(APP.ratio === '16:9') { cw = 1920; ch = 1080; } else if(APP.ratio === '1:1') { cw = 1080; ch = 1080; } canvas.width = cw; canvas.height = ch; const ctx = canvas.getContext('2d'); const stream = canvas.captureStream(30); let recorder; const type = userFormat === 'mp4' ? 'video/mp4' : 'video/webm'; const fallbackTypes = [type, 'video/webm; codecs=vp9', 'video/webm', 'video/mp4']; for(let m of fallbackTypes) { if(MediaRecorder.isTypeSupported(m)) { recorder = new MediaRecorder(stream, { mimeType: m }); break; } } if(!recorder) recorder = new MediaRecorder(stream); const chunks = []; recorder.ondataavailable = e => chunks.push(e.data); recorder.onstop = () => { const blob = new Blob(chunks, { type: recorder.mimeType }); const url = URL.createObjectURL(blob); const actualExt = recorder.mimeType.includes('mp4') ? 'mp4' : 'webm'; const a = document.createElement('a'); a.href = url; a.download = `Project_${Date.now()}.${actualExt}`; a.click(); resolve(); }; recorder.start(); processFrames(canvas, ctx, 30, (p) => { progressFill.style.width = `${p * 100}%`; }).then(() => recorder.stop()); }); }
+    function renderGifHandler() { return new Promise(async resolve => { if(document.getElementById('generation-text')) document.getElementById('generation-text').innerText = "Processing GIF Animation..."; const fps = 12; const delay = 1000 / fps; const canvas = document.createElement('canvas'); let cw = 540, ch = 960; if(APP.ratio === '16:9') { cw = 960; ch = 540; } else if(APP.ratio === '1:1') { cw = 600; ch = 600; } canvas.width = cw; canvas.height = ch; const ctx = canvas.getContext('2d'); let workerUrl = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'; try { const resp = await fetch(workerUrl); const blob = await resp.blob(); workerUrl = URL.createObjectURL(blob); } catch (e) {} const gif = new GIF({ workers: 2, quality: 10, width: cw, height: ch, workerScript: workerUrl }); await processFrames(canvas, ctx, fps, (p) => { progressFill.style.width = `${p * 50}%`; }, (canv) => gif.addFrame(canv, { copy: true, delay: delay })); if(document.getElementById('generation-text')) document.getElementById('generation-text').innerText = "Compiling GIF..."; gif.on('progress', p => { progressFill.style.width = `${50 + p * 50}%`; }); gif.on('finished', blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `Project_${Date.now()}.gif`; a.click(); resolve(); }); gif.render(); }); }
+    async function processFrames(canvas, ctx, fps, onProgress, onFrame) { 
+        const total = APP.duration * fps; 
+        for(let f = 0; f <= total; f++) { 
+            const time = f / fps; ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
+            APP.tracks.media.filter(c => time >= c.start && time <= c.end).forEach(m => { ctx.save(); if(m.bgType === 'color') { ctx.fillStyle = m.color; ctx.fillRect(0, 0, canvas.width, canvas.height); } else if(m.bgType === 'gradient') { const grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height); grd.addColorStop(0, m.grad1); grd.addColorStop(1, m.grad2); ctx.fillStyle = grd; ctx.fillRect(0, 0, canvas.width, canvas.height); } else if(m.bgType === 'image' && m.imgObj) { ctx.drawImage(m.imgObj, 0, 0, canvas.width, canvas.height); } else if(m.bgType === 'video' && m.videoObj) { m.videoObj.currentTime = time - m.start; ctx.drawImage(m.videoObj, 0, 0, canvas.width, canvas.height); } ctx.restore(); }); 
+            APP.tracks.text.filter(c => time >= c.start && time <= c.end).forEach(t => { 
+                ctx.save(); 
+                const dt = time - t.start; const spd = t.speed || 5;
+                let txp = t.x, typ = t.y;
+                if (t.effect === 'scroll-left') txp -= dt * spd * 10;
+                else if (t.effect === 'scroll-right') txp += dt * spd * 10;
+                else if (t.effect === 'scroll-up') typ -= dt * spd * 10;
+                else if (t.effect === 'scroll-down') typ += dt * spd * 10;
+                else if (t.effect === 'marquee-left') txp = 110 - ((dt * spd * 20) % 120);
+                else if (t.effect === 'marquee-right') txp = -10 + ((dt * spd * 20) % 120);
 
-        document.addEventListener('mouseup', () => isDragging = false);
+                const tx = (txp / 100) * canvas.width, ty = (typ / 100) * canvas.height; 
+                const fS = (t.size / 480) * canvas.height; 
+                ctx.font = `${t.bold ? 'bold' : ''} ${t.italic ? 'italic' : ''} ${fS}px ${t.font.split(',')[0].replace(/'/g,'')}`; 
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = t.color; 
+                t.text.split('\n').forEach((l, i) => ctx.fillText(l.replace(/<[^>]*>/g,''), tx, ty + (i - (t.text.split('\n').length-1)/2)*fS*1.2)); 
+                ctx.restore(); 
+            }); 
+            if(onFrame) onFrame(canvas); if(onProgress) onProgress(f / total); if(f % 5 === 0) await new Promise(r => requestAnimationFrame(r)); 
+        } 
     }
 
-
-    // --- High Definition Render ---
-    const renderVideoHandler = async () => {
-        // Pause playback if running NLE
-        if(APP.playing) togglePlayback();
-
-        overlay.classList.remove('hidden');
-        progressFill.style.width = '0%';
-        document.getElementById('generation-text').innerText = "Initializing HD Render Engine...";
-        document.querySelector('.spinner').style.display = 'block';
-        downloadVideoBtn.classList.add('hidden');
-        closeOverlayBtn.classList.add('hidden');
-
-        // Target Dynamic HD Resolution
-        const canvas = document.createElement('canvas');
-        let canvasW = 1080;
-        let canvasH = 1920;
-        if (APP.ratio === '16:9') { canvasW = 1920; canvasH = 1080; }
-        else if (APP.ratio === '3:4') { canvasW = 1080; canvasH = 1440; }
-        canvas.width = canvasW;
-        canvas.height = canvasH;
-        
-        const ctx = canvas.getContext('2d');
-        const fps = 30; // Reduced to 30 for stability
-
-        const videoStream = canvas.captureStream(fps);
-        let finalTracks = [...videoStream.getVideoTracks()];
-        
-        // Handling audio is complex when rendering faster than real-time.
-        // We will do real-time rendering logic to include Audio Web API cleanly. NLE
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const dest = audioCtx.createMediaStreamDestination();
-        
-        // Connect all audio objects to dest
-        APP.tracks.audio.forEach(a => {
-            if(a.audioObj) {
-                 const src = audioCtx.createMediaElementSource(a.audioObj);
-                 src.connect(dest);
-                 src.connect(audioCtx.destination); // For monitoring
-            }
-        });
-
-        if(dest.stream.getAudioTracks().length > 0) finalTracks.push(...dest.stream.getAudioTracks());
-        const combinedStream = new MediaStream(finalTracks);
-
-        let recorder;
-        try { recorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm; codecs=vp9' }); } 
-        catch (e) { recorder = new MediaRecorder(combinedStream); }
-        
-        const chunks = [];
-        recorder.ondataavailable = e => { if(e.data.size > 0) chunks.push(e.data); };
-        
-        let generatedBlobUrl = null;
-        recorder.onstop = () => {
-             const blob = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
-             generatedBlobUrl = URL.createObjectURL(blob);
-             document.getElementById('generation-text').innerText = "HD Render Complete!";
-             document.querySelector('.spinner').style.display = 'none';
-             downloadVideoBtn.classList.remove('hidden');
-             closeOverlayBtn.classList.remove('hidden');
-             
-             downloadVideoBtn.onclick = () => {
-                 const a = document.createElement('a');
-                 a.href = generatedBlobUrl;
-                 a.download = `T2V_Studio_HD_${Date.now()}.webm`;
-                 a.click();
-             };
-        };
-
-        // Render loop
-        // We will render in REAL TIME NLE
-        document.getElementById('generation-text').innerText = "Rendering frames...";
-        
-        recorder.start();
-        seekTo(0);
-        syncAudioPlay(); // Start audios NLE
-
-        let elapsedTime = 0;
-        const frameInterval = 1000 / fps;
-        let recording = true;
-
-        async function renderFrameTick() {
-            if(!recording) return;
-
-            // Update app time
-            seekTo(elapsedTime);
-            
-            // Capture DOM NLE NLE NLE NLE NLE
-            // Use HTML2Canvas for text objects NLE
-            try {
-                 // Fast drawing backgrounds manually NLE
-                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                 ctx.fillStyle = '#000000';
-                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                 
-                 const activeMedia = APP.tracks.media.filter((c, i) => {
-                     const nextClip = APP.tracks.media[i+1];
-                     const extendedEnd = (nextClip && nextClip.transition === 'fade-slide') ? c.end + 0.5 : c.end;
-                     return APP.time >= c.start && APP.time <= extendedEnd;
-                 });
-                 
-                 activeMedia.forEach(m => {
-                     let opacity = 1;
-                     let dx = 0;
-                     if (m.transition === 'fade-slide') {
-                         const timeIn = APP.time - m.start;
-                         if (timeIn >= 0 && timeIn < 0.5) {
-                             const p = timeIn/0.5;
-                             opacity = p;
-                             dx = (1-p) * canvas.width;
-                         }
-                     }
-                     if (APP.time >= m.end) {
-                         const timeOut = APP.time - m.end;
-                         const p = timeOut/0.5;
-                         if (p <= 1) opacity = 1 - p;
-                         else opacity = 0;
-                     }
-                     
-                     ctx.globalAlpha = opacity;
-                     
-                     if (m.bgType === 'color') {
-                         ctx.fillStyle = m.color;
-                         ctx.fillRect(dx, 0, canvas.width, canvas.height);
-                     } else if(m.bgType === 'gradient') {
-                         const grd = ctx.createLinearGradient(dx, 0, dx+canvas.width, canvas.height);
-                         grd.addColorStop(0, m.grad1); grd.addColorStop(1, m.grad2);
-                         ctx.fillStyle = grd;
-                         ctx.fillRect(dx, 0, canvas.width, canvas.height);
-                     } else if((m.bgType === 'image' || m.bgType === 'video') && m.videoObj) {
-                         const vRatio = m.videoObj.videoWidth / m.videoObj.videoHeight;
-                         const cRatio = canvas.width / canvas.height;
-                         let drawW = canvas.width, drawH = canvas.height, startX = dx, startY = 0;
-                         if (m.objectFit === 'contain') {
-                             if (vRatio > cRatio) { drawH = canvas.width / vRatio; startY = (canvas.height - drawH) / 2; }
-                             else { drawW = canvas.height * vRatio; startX = dx + (canvas.width - drawW) / 2; }
-                         } else {
-                             if (vRatio > cRatio) { drawW = canvas.height * vRatio; startX = dx - (drawW - canvas.width) / 2; }
-                             else { drawH = canvas.width / vRatio; startY = -(drawH - canvas.height) / 2; }
-                         }
-                         ctx.drawImage(m.videoObj, startX, startY, drawW, drawH);
-                     }
-                 });
-                 ctx.globalAlpha = 1.0;
-
-                 // Draw text layer NLE NLE
-                 const c = await html2canvas(frameObjects, {
-                      scale: canvas.width / frameObjects.clientWidth, // Dynamic Scale
-                      backgroundColor: null,
-                      useCORS: true,
-                      logging: false
-                 });
-                 ctx.drawImage(c, 0, 0, canvas.width, canvas.height);
-
-            } catch(e) { console.error("Capture err:", e); }
-
-            elapsedTime += frameInterval / 1000;
-            progressFill.style.width = ((elapsedTime / APP.duration) * 100) + '%';
-
-            if (elapsedTime >= APP.duration) {
-                recording = false;
-                recorder.stop();
-                syncAudioPause(); // Stop audio NLE
-            } else {
-                // Schedule next
-                setTimeout(renderFrameTick, frameInterval);
-            }
-        }
-
-        renderFrameTick();
-    };
-
-    [generateBtnTop, generateBtnBot].forEach(btn => { if(btn) btn.addEventListener('click', renderVideoHandler); });
-
-    closeOverlayBtn.addEventListener('click', () => {
-        overlay.classList.add('hidden');
-    });
-
-    // Utilities
-    function rgb2hex(rgb) {
-        if(!rgb) return null;
-        if(rgb.startsWith('#')) return rgb;
-        if(!rgb.startsWith('rgb')) return '#ffffff';
-        const a = rgb.split("(")[1].split(")")[0].split(",");
-        const r = parseInt(a[0]).toString(16).padStart(2, '0');
-        const g = parseInt(a[1]).toString(16).padStart(2, '0');
-        const b = parseInt(a[2]).toString(16).padStart(2, '0');
-        return `#${r}${g}${b}`;
-    }
-
+    init();
 });
